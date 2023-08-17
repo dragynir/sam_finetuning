@@ -59,6 +59,11 @@ class PromptEncoder(nn.Module):
         )
         self.no_mask_embed = nn.Embedding(1, embed_dim)
 
+        self.default_batch_size = 1
+
+    def set_batch_size(self, batch_size: int) -> None:
+        self.default_batch_size = batch_size
+
     def get_dense_pe(self) -> torch.Tensor:
         """
         Returns the positional encoding used to encode point prompts,
@@ -120,7 +125,7 @@ class PromptEncoder(nn.Module):
         elif masks is not None:
             return masks.shape[0]
         else:
-            return 1
+            return self.default_batch_size
 
     def _get_device(self) -> torch.device:
         return self.point_embeddings[0].weight.device

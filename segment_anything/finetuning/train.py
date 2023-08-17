@@ -21,8 +21,7 @@ import matplotlib.pyplot as plt
 
 def main():
     config = Config()
-    sam = sam_model_registry[config.model_type](checkpoint=config.checkpoint)
-    model = SamPredictor(sam).model
+    model = sam_model_registry[config.model_type](checkpoint=config.checkpoint)
     model.prompt_encoder.set_batch_size(config.batch_size)
     model.train()
 

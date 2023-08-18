@@ -1,4 +1,5 @@
 import sys
+from typing import List
 
 import torch
 from torch.utils.data import DataLoader
@@ -35,23 +36,24 @@ def main():
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
 
     # check dataset
-    for batch in dataloader:
-        images, masks = batch
-        break
+    # for batch in dataloader:
+    #     images, masks = batch
+    #     break
 
     criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     for batch in dataloader:
-        images, masks = batch
+        images, masks, coords, coords_labels = batch
 
         with torch.no_grad():
             image_embeddings = model.image_encoder(images)
             sparse_embeddings, dense_embeddings = model.prompt_encoder(
-                points=None,
+                points=(coords, coords_labels),
                 boxes=None,
                 masks=None,
             )
+        # похоже тут надо передавать равномерное поле из точек или бокс на все изображение!!!
 
         low_res_masks, iou_predictions = model.mask_decoder(
             image_embeddings=image_embeddings,

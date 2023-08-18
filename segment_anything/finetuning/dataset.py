@@ -6,6 +6,8 @@ from torch.utils.data import Dataset
 import torch
 import os
 import cv2
+
+from segment_anything.finetuning.transforms import build_all_layer_point_grids
 from segment_anything.utils.transforms import ResizeLongestSide
 
 
@@ -25,6 +27,7 @@ class SegmentationDataset(Dataset):
         self.transform = ResizeLongestSide(model_input_size)
         self.model_input_size = model_input_size
         self.preprocess_function = preprocess_function
+        self.points_grid = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)
 
     def __len__(self):
         return len(self.images)
@@ -43,7 +46,16 @@ class SegmentationDataset(Dataset):
         input_image_torch = torch.as_tensor(input_image[:, :, 0])
         return self.preprocess_function(input_image_torch, normalize=False)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def prepare_coords(self, image_size: Tuple[int, int]) -> Tuple[torch.Tensor, torch.Tensor]:
+        points_scale = np.array(image_size)[None, ::-1]
+        points_for_image = self.points_grid[0] * points_scale
+
+        point_coords = self.transform.apply_coords(points_for_image, image_size)
+        coords_torch = torch.as_tensor(point_coords, dtype=torch.float)
+        labels_torch = torch.ones(coords_torch.shape[0], dtype=torch.int)
+        return coords_torch, labels_torch
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         image_path = os.path.join(self.images_dir, self.images[idx])
         mask_path = os.path.join(self.mask_dir, self.images[idx])
 
@@ -56,7 +68,8 @@ class SegmentationDataset(Dataset):
             image = transformed['image']
             mask = transformed['mask']
 
+        coords_tensor, labels_tensor = self.prepare_coords(image.shape[:2])
         image_tensor = self.prepare_image(image)
         mask_tensor = self.prepare_mask(mask)
 
-        return image_tensor, mask_tensor
+        return image_tensor, mask_tensor, coords_tensor, labels_tensor

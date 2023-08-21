@@ -1,5 +1,7 @@
 import sys
 
+from segment_anything.finetuning.transforms import build_all_layer_point_grids
+
 sys.path.append("..")
 from segment_anything import sam_model_registry, SamPredictor
 
@@ -51,17 +53,36 @@ def main():
     input_point = np.array([[500, 375]])
     input_label = np.array([1])
 
+    # Выводы:
+    # Делать grid из точек не правильно т к сетка тогда просто будет выделять все;
+    # Надо пустой грид задавать, либо осмысленный.
+
+    # Если совсем точек не подавать - отдает пустую маску.
+
+
+    # input_point = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)
+    # points_scale = np.array(image.shape[:2])[None, ::-1]
+    # input_point = input_point[0] * points_scale
+    # input_label = np.ones(input_point.shape[0])
+
     plt.figure(figsize=(10, 10))
     plt.imshow(image)
     show_points(input_point, input_label, plt.gca())
     plt.axis('on')
     plt.show()
 
+    # TODO - сравнить маски на выходе из predict и train.py
     masks, scores, logits = predictor.predict(
-        point_coords=input_point,
-        point_labels=input_label,
-        multimask_output=True,
+        point_coords=None,  #input_point,
+        point_labels=None,  #input_label,
+        multimask_output=False,
     )
+
+    print(masks.shape)
+
+    plt.figure()
+    plt.imshow(masks.squeeze())
+    plt.show()
 
 
 if __name__ == '__main__':

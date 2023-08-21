@@ -15,6 +15,7 @@ from segment_anything import sam_model_registry, SamPredictor
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.nn.functional import threshold, normalize
 
 
 # пишу тут код, далее проверяю на датасете с масками, железо беру с kaggle
@@ -34,6 +35,11 @@ def main():
         augmentations=config.augmentations
     )
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
+
+
+    # Делать grid из точек не правильно т к сетка тогда просто будет выделять все;
+    # Надо пустой грид задавать, либо осмысленный
+
 
     # check dataset
     # for batch in dataloader:
@@ -60,10 +66,10 @@ def main():
             image_pe=model.prompt_encoder.get_dense_pe(),
             sparse_prompt_embeddings=sparse_embeddings,
             dense_prompt_embeddings=dense_embeddings,
-            multimask_output=True,
+            multimask_output=False,
         )
         binary_masks = low_res_masks
-
+        # binary_masks = normalize(threshold(low_res_masks, 0.0, 0))
         loss = criterion(binary_masks, masks)
         optimizer.zero_grad()
         loss.backward()

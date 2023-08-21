@@ -27,7 +27,12 @@ class SegmentationDataset(Dataset):
         self.transform = ResizeLongestSide(model_input_size)
         self.model_input_size = model_input_size
         self.preprocess_function = preprocess_function
-        self.points_grid = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)
+
+        # все точки на изображении сеткой - по умолчанию не сегментирует ничего при их подаче
+        # self.points_grid = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)[0]
+
+        # points in the center of image
+        self.points_grid = np.array([[0.5, 0.5]])
 
     def __len__(self):
         return len(self.images)
@@ -46,9 +51,13 @@ class SegmentationDataset(Dataset):
         input_image_torch = torch.as_tensor(input_image[:, :, 0])
         return self.preprocess_function(input_image_torch, normalize=False)
 
-    def prepare_coords(self, image_size: Tuple[int, int]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def prepare_coords(self, coords: np.array, image_size: Tuple[int, int]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """"
+
+        :param coords: relative coords np.array with shape (num_points, 2) and range [0, 1]
+        """
         points_scale = np.array(image_size)[None, ::-1]
-        points_for_image = self.points_grid[0] * points_scale
+        points_for_image = coords[0] * points_scale
 
         point_coords = self.transform.apply_coords(points_for_image, image_size)
         coords_torch = torch.as_tensor(point_coords, dtype=torch.float)
@@ -68,7 +77,7 @@ class SegmentationDataset(Dataset):
             image = transformed['image']
             mask = transformed['mask']
 
-        coords_tensor, labels_tensor = self.prepare_coords(image.shape[:2])
+        coords_tensor, labels_tensor = self.prepare_coords(self.points_grid, image.shape[:2])
         image_tensor = self.prepare_image(image)
         mask_tensor = self.prepare_mask(mask)
 

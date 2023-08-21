@@ -60,7 +60,7 @@ def main():
     # Если совсем точек не подавать - отдает пустую маску.
 
 
-    # input_point = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)
+    input_point = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)
     # points_scale = np.array(image.shape[:2])[None, ::-1]
     # input_point = input_point[0] * points_scale
     # input_label = np.ones(input_point.shape[0])

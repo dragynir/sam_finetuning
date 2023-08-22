@@ -74,7 +74,7 @@ class PointsGuidedSegmentationDataset(SegmentationDataset):
     ):
         super().__init__(*args, **kwargs)
 
-        assert 'coords' in points_df.columns
+        assert 'points' in points_df.columns
         assert 'image' in points_df.columns
 
         self.points_df = points_df
@@ -100,23 +100,30 @@ class PointsGuidedSegmentationDataset(SegmentationDataset):
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         image_path = os.path.join(self.images_dir, self.images[idx])
         mask_path = os.path.join(self.mask_dir, self.images[idx])
-        points_grid = None  # читаем точки и передаем их в аугментации в том числе!!!
+
+        if self.points_df:
+            points = self.points_df.loc[self.images[idx], 'points']
+
+        else:
+            points = None
 
         image = self.read_image(image_path)
         mask = self.read_image(mask_path)
-        mask = (mask > 126).astype(image.dtype)
+        mask = (mask > 126).astype(image.dtype)  # for bad jpeg masks
 
         if self.augmentations:
-            transformed = self.augmentations(image=image, mask=mask)
+            # https://albumentations.ai/docs/getting_started/keypoints_augmentation/
+            transformed = self.augmentations(image=image, mask=mask, keypoints=points)
             image = transformed['image']
             mask = transformed['mask']
+            points = transformed.get('keypoints', None)
 
         image_size = image.shape[:2]
-        if points_grid is None:
+        if points is None:
             points_scale = np.array(image_size)[None, ::-1]
-            points_grid = self.points_grid[0] * points_scale
+            points = self.points_grid[0] * points_scale
 
-        coords_tensor, labels_tensor = self.prepare_coords(points_grid, image_size)
+        coords_tensor, labels_tensor = self.prepare_coords(points, image_size)
         image_tensor = self.prepare_image(image)
         mask_tensor = self.prepare_mask(mask)
 

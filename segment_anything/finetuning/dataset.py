@@ -41,10 +41,10 @@ class SegmentationDataset(Dataset):
         input_image_torch = input_image_torch.permute(2, 0, 1).contiguous()
         return self.preprocess_function(input_image_torch)
 
-    def prepare_mask(self, image: np.ndarray) -> torch.Tensor:
-        input_image = self.transform.apply_image(image)
-        input_image_torch = torch.as_tensor(input_image[:, :, 0])
-        return self.preprocess_function(input_image_torch, normalize=False)
+    def prepare_mask(self, mask: np.ndarray) -> torch.Tensor:
+        input_mask = self.transform.apply_image(mask)
+        input_mask_torch = torch.as_tensor(input_mask[:, :, 0], dtype=torch.float)
+        return self.preprocess_function(input_mask_torch, normalize=False)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         image_path = os.path.join(self.images_dir, self.images[idx])
@@ -68,6 +68,7 @@ class SegmentationDataset(Dataset):
 class PointsGuidedSegmentationDataset(SegmentationDataset):
     # TODO rename to GuidedSegmentationDataset
     # and add boxes guide training https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/
+    # также добавить дефолтный бокс как с центральной точкой
 
     def __init__(
         self,
@@ -77,8 +78,9 @@ class PointsGuidedSegmentationDataset(SegmentationDataset):
     ):
         super().__init__(*args, **kwargs)
 
-        assert 'points' in points_df.columns
-        assert 'image' in points_df.columns
+        if points_df is not None:
+            assert 'points' in points_df.columns
+            assert 'image' in points_df.columns
 
         self.points_df = points_df
 

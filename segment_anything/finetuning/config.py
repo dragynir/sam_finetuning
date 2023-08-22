@@ -10,5 +10,5 @@ class Config:
     images_dir: str = '../../../datasets/nails/images'
     mask_dir: str = '../../../datasets/nails/masks'
     model_input_size: int = 1024
-    batch_size: int = 4
+    batch_size: int = 2
     augmentations: A.Compose = None

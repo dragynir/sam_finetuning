@@ -55,7 +55,7 @@ def main():
         with torch.no_grad():
             image_embeddings = model.image_encoder(images)
             sparse_embeddings, dense_embeddings = model.prompt_encoder(
-                points=(coords, coords_labels),
+                points=None,  #(coords, coords_labels),
                 boxes=None,
                 masks=None,
             )
@@ -70,6 +70,7 @@ def main():
         )
         binary_masks = low_res_masks
         # binary_masks = normalize(threshold(low_res_masks, 0.0, 0))
+        # need to upscale masks here to mask.shape
         loss = criterion(binary_masks, masks)
         optimizer.zero_grad()
         loss.backward()

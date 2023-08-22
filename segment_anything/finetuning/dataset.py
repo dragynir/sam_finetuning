@@ -66,6 +66,9 @@ class SegmentationDataset(Dataset):
 
 
 class PointsGuidedSegmentationDataset(SegmentationDataset):
+    # TODO rename to GuidedSegmentationDataset
+    # and add boxes guide training https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/
+
     def __init__(
         self,
         points_df: pd.DataFrame = None,

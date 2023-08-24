@@ -15,22 +15,19 @@ from segment_anything.utils.transforms import ResizeLongestSide
 class SegmentationDataset(Dataset):
     def __init__(
         self,
-        images_dir,
-        mask_dir,
+        df: pd.DataFrame,
         model_input_size,
         preprocess_function,
         augmentations=None,
     ):
-        self.images_dir = images_dir
-        self.mask_dir = mask_dir
+        self.df = df
         self.augmentations = augmentations
-        self.images = os.listdir(self.images_dir)
         self.transform = ResizeLongestSide(model_input_size)
         self.model_input_size = model_input_size
         self.preprocess_function = preprocess_function
 
     def __len__(self):
-        return len(self.images)
+        return len(self.df)
 
     def read_image(self, image_path):
         return cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
@@ -47,8 +44,9 @@ class SegmentationDataset(Dataset):
         return self.preprocess_function(input_mask_torch, normalize=False)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        image_path = os.path.join(self.images_dir, self.images[idx])
-        mask_path = os.path.join(self.mask_dir, self.images[idx])
+
+        image_path = self.df.iloc[idx, :]['image_path']
+        mask_path = self.df.iloc[idx, :]['mask_path']
 
         image = self.read_image(image_path)
         mask = self.read_image(mask_path)
@@ -69,7 +67,7 @@ class PointsGuidedSegmentationDataset(SegmentationDataset):
     # TODO rename to GuidedSegmentationDataset
     # and add boxes guide training https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/
     # также добавить дефолтный бокс как с центральной точкой
-
+    # TODO rewrite for new dataframe input
     def __init__(
         self,
         points_df: pd.DataFrame = None,

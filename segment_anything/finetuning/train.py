@@ -1,5 +1,4 @@
 import sys
-from typing import List
 
 import torch
 from torch.nn import functional as F
@@ -10,13 +9,8 @@ from segment_anything.finetuning.config import Config
 sys.path.append("..")
 
 
-from segment_anything.finetuning.dataset import SegmentationDataset, PointsGuidedSegmentationDataset
-from segment_anything import sam_model_registry, SamPredictor
-
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from torch.nn.functional import threshold, normalize
+from segment_anything.finetuning.data.dataset import PointsGuidedSegmentationDataset
+from segment_anything import sam_model_registry
 
 
 # Наблюдения:

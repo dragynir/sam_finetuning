@@ -63,37 +63,20 @@ class SegmentationDataset(Dataset):
         return image_tensor, mask_tensor
 
 
-class PointsGuidedSegmentationDataset(SegmentationDataset):
+class GuidedSegmentationDataset(SegmentationDataset):
     # TODO rename to GuidedSegmentationDataset
     # and add boxes guide training https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/
     # также добавить дефолтный бокс как с центральной точкой
-    # TODO rewrite for new dataframe input
-    def __init__(
-        self,
-        points_df: pd.DataFrame = None,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(*args, **kwargs)
-
-        if points_df is not None:
-            assert 'points' in points_df.columns
-            assert 'image' in points_df.columns
-
-        self.points_df = points_df
-
-        # все точки на изображении сеткой - по умолчанию не сегментирует ничего при их подаче
-        # self.points_grid = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)[0]
-
-        # points in the center of image
-        self.points_grid = np.array([[0.5, 0.5]])
-
-    def __len__(self):
-        return len(self.images)
-
+    # все точки на изображении сеткой - по умолчанию не сегментирует ничего при их подаче
+    # self.points_grid = build_all_layer_point_grids(n_per_side=32, n_layers=0, scale_per_layer=1)[0]
+    # points in the center of image
+    # self.points_grid = np.array([[0.5, 0.5]])
+    # if points is None:
+    #   points_scale = np.array(image_size)[None, ::-1]
+    #     points = self.points_grid[0] * points_scale
     def prepare_coords(self, points_for_image: np.array, image_size: Tuple[int, int]) -> Tuple[torch.Tensor, torch.Tensor]:
         """"
-        :param points_for_image: relative coords np.array with shape (num_points, 2) and range [0, 1]
+        :param points_for_image: relative coords np.ndarray with shape (num_points, 2) and range [0, 1]
         """
         point_coords = self.transform.apply_coords(points_for_image, image_size)
         coords_torch = torch.as_tensor(point_coords, dtype=torch.float)
@@ -101,14 +84,10 @@ class PointsGuidedSegmentationDataset(SegmentationDataset):
         return coords_torch, labels_torch
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        image_path = os.path.join(self.images_dir, self.images[idx])
-        mask_path = os.path.join(self.mask_dir, self.images[idx])
 
-        if self.points_df:
-            points = self.points_df.loc[self.images[idx], 'points']
-
-        else:
-            points = None
+        image_path = self.df.iloc[idx, :]['image_path']
+        mask_path = self.df.iloc[idx, :]['mask_path']
+        points = self.df.loc[self.df[idx], 'points']
 
         image = self.read_image(image_path)
         mask = self.read_image(mask_path)
@@ -122,10 +101,6 @@ class PointsGuidedSegmentationDataset(SegmentationDataset):
             points = transformed.get('keypoints', None)
 
         image_size = image.shape[:2]
-        if points is None:
-            points_scale = np.array(image_size)[None, ::-1]
-            points = self.points_grid[0] * points_scale
-
         coords_tensor, labels_tensor = self.prepare_coords(points, image_size)
         image_tensor = self.prepare_image(image)
         mask_tensor = self.prepare_mask(mask)

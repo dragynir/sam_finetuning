@@ -4,7 +4,7 @@ from typing import Callable
 import albumentations as A
 from torch.utils.data import Dataset
 
-from segment_anything.finetuning.data.dataset import PointsGuidedSegmentationDataset
+from segment_anything.finetuning.data.dataset import GuidedSegmentationDataset
 
 
 # todo переписать на hydra!
@@ -19,7 +19,7 @@ class Config:
 
     train_dataset_path = ''  # with folds
     test_dataset_path = ''
-    dataset: Dataset = PointsGuidedSegmentationDataset
+    dataset: Dataset = GuidedSegmentationDataset
 
     model_input_size: int = 1024
     model_preprocess_function: Callable = None

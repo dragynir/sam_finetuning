@@ -71,7 +71,7 @@ def main():
     plt.axis('on')
     plt.show()
 
-    # TODO - сравнить маски на выходе из predict и train.py
+    # TODO - сравнить маски на выходе из predict и train_pytorch.py
     masks, scores, logits = predictor.predict(
         point_coords=None,  #input_point,
         point_labels=None,  #input_label,

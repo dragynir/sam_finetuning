@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from segment_anything.finetuning.config import Config
 
 
-class MyDataModule(L.LightningDataModule):
+class SamDatamodule(L.LightningDataModule):
 
     def __init__(self, config: Config, val_fold=0):
         super().__init__()
@@ -18,7 +18,7 @@ class MyDataModule(L.LightningDataModule):
 
         self.test_df = pd.read_csv(config.test_dataset_path)
 
-    def setup(self, stage):
+    def setup(self, stage: str):
         """
 
         called on every process in DDP

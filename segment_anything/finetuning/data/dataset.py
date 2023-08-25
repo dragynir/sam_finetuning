@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -43,7 +43,7 @@ class SegmentationDataset(Dataset):
         input_mask_torch = torch.as_tensor(input_mask[:, :, 0], dtype=torch.float)
         return self.preprocess_function(input_mask_torch, normalize=False)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
 
         image_path = self.df.iloc[idx, :]['image_path']
         mask_path = self.df.iloc[idx, :]['mask_path']
@@ -60,7 +60,7 @@ class SegmentationDataset(Dataset):
         image_tensor = self.prepare_image(image)
         mask_tensor = self.prepare_mask(mask)
 
-        return image_tensor, mask_tensor
+        return {'image': image_tensor, 'mask': mask_tensor}
 
 
 class GuidedSegmentationDataset(SegmentationDataset):
@@ -83,7 +83,7 @@ class GuidedSegmentationDataset(SegmentationDataset):
         labels_torch = torch.ones(coords_torch.shape[0], dtype=torch.int)
         return coords_torch, labels_torch
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
 
         image_path = self.df.iloc[idx, :]['image_path']
         mask_path = self.df.iloc[idx, :]['mask_path']
@@ -101,8 +101,8 @@ class GuidedSegmentationDataset(SegmentationDataset):
             points = transformed.get('keypoints', None)
 
         image_size = image.shape[:2]
-        coords_tensor, labels_tensor = self.prepare_coords(points, image_size)
+        points_tensor, points_labels_tensor = self.prepare_coords(points, image_size)
         image_tensor = self.prepare_image(image)
         mask_tensor = self.prepare_mask(mask)
 
-        return image_tensor, mask_tensor, coords_tensor, labels_tensor
+        return {'image': image_tensor, 'mask': mask_tensor, 'points': points_tensor, 'points_labels': points_labels_tensor}

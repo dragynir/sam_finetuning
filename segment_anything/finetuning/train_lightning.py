@@ -1,18 +1,16 @@
-from clearml import Task
-from configs.base import Config
-from configs import config
 from typing import Tuple
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
 
-from new_src.callbacks.logger import ClearmlImageLogger, ClearmlLogger
-from new_src.callbacks.model import SaveJitModel, FeatureExtractorFreeze, FeatureExtractorFreezeConvolutions
-from new_src.trainer.datamodule import FacesDataModule
-from new_src.trainer.module import VerificationModelTuning, VerificationModelTraining
-from new_src.trainer.utils import create_experiment
+from segment_anything.finetuning.config import Config
+from segment_anything.finetuning.trainer.datamodule import SamDatamodule
+from segment_anything.finetuning.trainer.sam_module import GuidedSamFinetuner
+from segment_anything.finetuning.trainer.utils import create_experiment
 
 
 def train(config: Config) -> None:
+
+    seed_everything(config.seed)
 
     experiment_dir, checkpoints_path = create_experiment(config)
 
@@ -31,14 +29,13 @@ def train(config: Config) -> None:
             monitor='val_loss',
             mode='min',
         ),
-        SaveJitModel(checkpoints_path, experiment_dir),
     ]
 
     trainer = Trainer(
         accelerator=config.accelerator,
         devices=config.devices,
         strategy=config.strategy,
-        max_epochs=config.feature_extractor_epochs,
+        max_epochs=config.max_epochs,
         callbacks=finetune_callbacks,
         logger=,
         gradient_clip_val=config.gradient_clip_val,
@@ -46,12 +43,16 @@ def train(config: Config) -> None:
         deterministic=True,
         log_every_n_steps=100,
     )
-    datamodule = FacesDataModule(config)
-    model = VerificationModelTuning.load_from_checkpoint(
-        best_model_path,
-        config=config,
-        class_counts=datamodule.class_counts,
-    )
+    datamodule = SamDatamodule(config)
+
+    if config.module_checkpoint_path:
+        model = GuidedSamFinetuner.load_from_checkpoint(
+            config.module_checkpoint_path,
+            config=config,
+        )
+    else:
+        model = GuidedSamFinetuner(config)
+
     trainer.fit(model, datamodule=datamodule)
 
 

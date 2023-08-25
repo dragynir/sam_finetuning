@@ -16,6 +16,7 @@ class Config:
     module_checkpoint_path: Optional[str] = None
     experiments_dir: str = ''
     experiment_name: str = 'example'
+    seed: int = 42
 
     # images_dir: str = '../../../datasets/nails/images'
     # mask_dir: str = '../../../datasets/nails/masks'
@@ -30,5 +31,10 @@ class Config:
     model_preprocess_function: Callable = None
     augmentations: A.Compose = None
 
-    batch_size: int = 2
+    max_epochs: int = 20
     early_stop_patience: int = 10
+    batch_size: int = 2
+    accelerator: str = 'gpu'
+    strategy: str = 'ddp'
+    devices: str = '0,'
+    gradient_clip_val: Optional[float] = None
